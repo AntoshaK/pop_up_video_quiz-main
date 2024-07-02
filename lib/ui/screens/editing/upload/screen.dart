@@ -11,13 +11,21 @@ import 'package:video_quiz/utils/safe_listeners.dart';
 import 'package:video_quiz/utils/text_editing_controller_provider.dart';
 
 @RoutePage()
-class EditingUploadScreen extends StatelessWidget {
+class EditingUploadScreen extends StatefulWidget {
   const EditingUploadScreen({super.key});
 
   @override
+  _EditingUploadScreenState createState() => _EditingUploadScreenState();
+}
+
+class _EditingUploadScreenState extends State<EditingUploadScreen> {
+  String? errorMessage;
+
+  @override
   Widget build(BuildContext context) {
-    const rickRollSurprise = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const rickRollSurprise = 'https://[text].mp4';
     const hint = rickRollSurprise;
+
     return BlocProvider(
       create: (context) => getIt<UploadBloc>(),
       child: MultiBlocListener(
@@ -36,15 +44,30 @@ class EditingUploadScreen extends StatelessWidget {
               children: [
                 TextEditingControllerProvider(
                   builder: (context, ctr) {
-                    onSubmit() => context
-                        .read<UploadBloc>()
-                        .add(UploadEvent.urlSelected(ctr.text));
+                    onSubmit() {
+                      final text = ctr.text;
+                      final regex = RegExp(r'^https:\/\/.*\.mp4$');
+                      if (regex.hasMatch(text)) {
+                        setState(() {
+                          errorMessage = null;
+                        });
+                        context.read<UploadBloc>().add(UploadEvent.urlSelected(text));
+                      } else {
+                        setState(() {
+                          errorMessage = 'Неверный формат URL. Он должен быть в формате https://[text].mp4';
+                        });
+                      }
+                    }
+
                     return Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: ctr,
-                            decoration: const InputDecoration(hintText: hint),
+                            decoration: InputDecoration(
+                              hintText: hint,
+                              errorText: errorMessage,
+                            ),
                             onSubmitted: (_) => onSubmit(),
                           ),
                         ),
